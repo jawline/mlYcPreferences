@@ -21,7 +21,7 @@ def load_data():
   return df
 
 def save_data(data_frame):
-  data_frame.to_csv("user.csv")
+  data_frame.to_csv("user.csv", index=False)
 
 def scrape(pages):
   url = "https://news.ycombinator.com/news?p="
@@ -47,6 +47,7 @@ def scrape(pages):
 
     for result in results:
       scraped_articles.append((result.get('href'), result.get_text()))
+
   return scraped_articles
 
 def get_interest():
@@ -66,6 +67,11 @@ def get_interest():
 
 def score_article(data_frame, article):
   url = article[0]
+
+  if not (url.startswith("https://") or url.startswith("http://")):
+    print("Not a web-link. Skipping article")
+    return
+
   title = article[1]
   previous = df.get(url)
   if not isinstance(previous, pd.Series):
@@ -74,12 +80,10 @@ def score_article(data_frame, article):
 
     interest = get_interest()
 
-    data_frame[url] = [[title], interest]
+    data_frame[url] = [title, interest]
   else:
-    # If we have seen it before then add the title to the list of alternative titles for the same content
-    if not any(article_url == url for article_url in previous):
-      print("TODO: Adding an alternative title for %s" % title)
-      # previous.insert(0, article_url)
+    # If we have seen it before then skip
+    return
 
 if __name__ == "__main__":
 
@@ -100,7 +104,7 @@ if __name__ == "__main__":
   print("---------------------------------")
 
   print("Starting scraper")
-  scraped = scrape(1)
+  scraped = scrape(5)
 
   for article in scraped:
     score_article(df, article)
