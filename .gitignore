@@ -1,4 +1,6 @@
-user.csv
+tmp_train/
 backups/
 venv/
 backup.csv
+saved_model/
+__pycache__/

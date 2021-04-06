@@ -1,5 +1,3 @@
-import os
-import shutil
 import re
 from urllib.parse import urlparse
 import numpy as np
@@ -9,42 +7,7 @@ import tensorflow_text as text
 import pandas as pd
 from official.nlp import optimization  # to create AdamW optmizer
 
-import matplotlib.pyplot as plt
-
-def load_data():
-  try:
-    df = pd.read_csv("user.csv")
-  except Exception as e:
-    print(f"{e} - creating fresh")
-    df = pd.DataFrame({})
-  return df
-
-def make_training(data_frame):
-  train_inputs = []
-  train_outputs = []
-
-  for url in data_frame:
-    title = data_frame[url][0]
-    score = data_frame[url][1]
-
-    try:
-      i = int(title)
-      print("Skip ", i)
-      continue
-    except:
-      pass
-
-    # Remove the title tags and dates
-    title = re.sub(r'\[.+\]', '', title)
-    title = re.sub(r'\([0-9]+\)', '', title)
-
-    train_inputs.append(title + " " + urlparse(url).netloc)
-    train_outputs.append(score)
-
-  return (np.array(train_inputs), np.array(train_outputs))
-
 bert_model_name = 'small_bert/bert_en_uncased_L-4_H-512_A-8' 
-
 map_name_to_handle = {
     'bert_en_uncased_L-12_H-768_A-12':
         'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3',
@@ -186,18 +149,38 @@ map_model_to_preprocess = {
 tfhub_handle_encoder = map_name_to_handle[bert_model_name]
 tfhub_handle_preprocess = map_model_to_preprocess[bert_model_name]
 
-if __name__ == "__main__":
-  tf.get_logger().setLevel('DEBUG')
-  df = load_data()
-  train = make_training(df)
-
-  for i in range(0, len(train[0])):
-    print(train[0][i], train[1][i])
-
-  print(len(train[0]))
+def build_classifier_model():
 
   print(f'BERT model selected           : {tfhub_handle_encoder}')
   print(f'Preprocess model auto-selected: {tfhub_handle_preprocess}')
 
-  bert_preprocess_model = hub.KerasLayer(tfhub_handle_preprocess)
-  bert_model = hub.KerasLayer(tfhub_handle_encoder)
+  text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name='text')
+  preprocessing_layer = hub.KerasLayer(tfhub_handle_preprocess, name='preprocessing')
+  encoder_inputs = preprocessing_layer(text_input)
+  encoder = hub.KerasLayer(tfhub_handle_encoder, trainable=False, name='BERT_encoder')
+  outputs = encoder(encoder_inputs)
+  net = outputs['pooled_output']
+  net = tf.keras.layers.Dropout(0.3)(net)
+  net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
+  return tf.keras.Model(text_input, net)
+
+def load_model(name):
+  return tf.keras.models.load_model(name, compile=False)
+
+def prepare_input(url, saved_line):
+  title = saved_line[0]
+  article_score = saved_line[1]
+  article_comments = saved_line[2]
+  article_age = saved_line[3]
+  our_score = saved_line[4]
+
+  try:
+    i = int(title)
+    return None
+  except:
+    pass
+
+  # Remove the title tags and dates
+  title = re.sub(r'\[.+\]', '', title)
+  title = re.sub(r'\([0-9]+\)', '', title)
+  return (f"{title} {urlparse(url).netloc} {article_score} {article_comments} {article_age}", our_score)
