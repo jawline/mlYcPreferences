@@ -43,7 +43,7 @@ def save_data(data_frame):
 # Find an article in the data frame (TODO: This could be a hash lookup for speed)
 def find_article(data_frame, url):
   for article in data_frame.iterrows():
-    if article[1][0] == url:
+    if article[1]["url"] == url:
       return True
   return False
 
@@ -139,14 +139,14 @@ def do_prediction(features):
   global correct_new_predictions
 
   # Run the model on the new article and make a prediction
-  prediction = predict(bert_model, our_model, features)
+  prediction = predict(bert_model, our_model, features)[0]
 
   new_predictions += 1
 
   # Interpret the prediction as a binary (true / false) and interpret the score we
   # just entered as a binary (> 1 in 0-3) then compare the results.
   interest_as_binary = features[-1] > 1
-  interest_prediction_as_binary = prediction[0] > 0
+  interest_prediction_as_binary = prediction > 0
 
   # If our prediction as a binary (> 0 predicts we like the article) matches the input that we just entered
   # (> 1 = predicted we like the article, <= 1 = predicted we disliked the article) then we mark it as correct
@@ -154,8 +154,8 @@ def do_prediction(features):
     correct_new_predictions += 1
 
   # Print some statistics about the prediction accuracy over this session
-  print(interest_as_binary, prediction[0] > 0, interest_as_binary == interest_prediction_as_binary)
-  print(f"Our prediction for {features[0]}: {prediction[0] > 0} {prediction[0]}")
+  print(interest_as_binary, prediction > 0, interest_as_binary == interest_prediction_as_binary)
+  print(f"Our prediction for {features['title']}: {prediction > 0} {prediction}")
   print(f"Of the new predictions made this session {correct_new_predictions} of {new_predictions} were correct {(float(correct_new_predictions) / float(new_predictions)) * 100.0}%")
 
 # This method generates the data from the scrape and then asks a user to score it before finally adding the scored data to the data frame.
@@ -178,10 +178,10 @@ def score_article(data_frame, article):
     print("Url: %s" % url)
 
     interest = get_interest()
-    data_frame.loc[df.shape[0]] = [url, title, score, comments, age, interest, int(time.time())]
+    data_frame.loc[df.shape[0]] = {"url": url, "title": title, "score": score, "comments": comments, "age": age, "user_interest": interest, "user_ranking_time": int(time.time())}
 
     if our_model != None:
-      do_prediction([url, title, score, comments, age, interest])
+      do_prediction(data_frame.loc[df.shape[0] - 1])
   else:
     print(f"Skipping {title} because you have seen this article before")
     # If we have seen it before then skip

@@ -57,7 +57,7 @@ if __name__ == "__main__":
   print("Selected loss and metrics")
 
   epochs = 20
-  batch_size = 32
+  batch_size = 8
   steps_per_epoch = len(training_data[0]) / batch_size
   num_train_steps = steps_per_epoch * epochs
   num_warmup_steps = int(0.1*num_train_steps)
@@ -69,7 +69,7 @@ if __name__ == "__main__":
   classifier_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
   print("Preparing to train")
-  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.1, epochs=epochs)
+  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.2, epochs=epochs)
 
   print("Printing results")
   loss, accuracy = classifier_model.evaluate(x=training_data[0], y=training_data[1])

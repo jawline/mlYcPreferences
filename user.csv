@@ -1,4 +1,4 @@
-Unnamed: 0,0,1,2,3,4,5
+url,title,score,comments,age,user_interest,user_ranking_time
 https://robertchen.cc/blog/2021/04/03/github-pages-xss,Breaking GitHub Private Pages for $35k,312,40,5,2,1617783902.157635
 https://www.troyhunt.com/the-facebook-phone-numbers-are-now-searchable-in-have-i-been-pwned/,The Facebook Phone Numbers Are Now Searchable in Have I Been Pwned,181,73,3,0,1617783902.1576366
 https://www.djangoproject.com/weblog/2021/apr/06/django-32-released/,Django 3.2,150,56,2,1,1617783902.157637
@@ -375,3 +375,7 @@ https://tools.ietf.org/html/rfc1,April 7: The Internet's symbolic birth date thr
 https://www.joyceproject.com/pages/aboutproject.htm,Joyce Project,4,1,2,1,1617785730.0
 https://oeis.org,The On-Line Encyclopedia of Integer Sequences,4,0,9,3,1617785736.0
 https://www.youtube.com/watch?v=mHDCjYg85wM,A simple pitch deck is a successful pitch deck,3,0,1,0,1617786573.0
+https://skruv.io/,"Show HN: Skruv – No-dependency, no-build, small JavaScript framework",8,2,51,2,1617788996.0
+https://www.celinehh.com/academia-to-startups,From Academia to Startups – Common Founder Foibles,3,0,2,1,1617789005.0
+https://www.nbcnews.com/better/health/why-walking-most-underrated-form-exercise-ncna797271,Why walking is the most underrated form of exercise (2018),3,0,2,0,1617789013.0
+http://fuckmagento.com/,Fuck Magento,16,8,48,2,1617789166.0

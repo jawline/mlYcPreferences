@@ -173,12 +173,12 @@ def load_model(name):
   return tf.keras.models.load_model(name, compile=False)
 
 def prepare_input(saved_line):
-  url = saved_line[0]
-  title = saved_line[1]
-  article_score = saved_line[2]
-  article_comments = saved_line[3]
-  article_age = saved_line[4]
-  our_score = saved_line[5]
+  url = saved_line["url"]
+  title = saved_line["title"]
+  article_score = saved_line["score"]
+  article_comments = saved_line["comments"]
+  article_age = saved_line["age"]
+  our_score = saved_line["user_interest"]
 
   try:
     i = int(title)
@@ -191,8 +191,8 @@ def prepare_input(saved_line):
   title = re.sub(r'\([0-9]+\)', '', title)
   return (f"{title} {urlparse(url).netloc} {article_score} {article_comments} {article_age}", int(our_score) > 1)
 
-def predict(bert_model, our_model, url, saved_line):
-  sanitized_input = prepare_input(url, saved_line)[0]
+def predict(bert_model, our_model, saved_line):
+  sanitized_input = prepare_input(saved_line)[0]
   print(sanitized_input)
   bert_encoding = bert_model.predict([sanitized_input])
   print(len(bert_encoding))
