@@ -36,7 +36,7 @@ def make_training(data_frame):
   return (np.array(train_inputs), np.array(train_outputs))
 
 if __name__ == "__main__":
-  tf.get_logger().setLevel('DEBUG')
+  tf.get_logger().setLevel('ERROR')
   df = load_data()
   training_data = make_training(df)
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
   print("Selected loss and metrics")
 
-  epochs = 10
+  epochs = 20
   batch_size = 32
   steps_per_epoch = len(training_data[0]) / batch_size
   num_train_steps = steps_per_epoch * epochs
