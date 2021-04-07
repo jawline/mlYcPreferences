@@ -46,6 +46,8 @@ def scrape(pages):
 
   scraped_articles = []
 
+  print(f"Loading {pages} pages")
+
   # THN pages have trivially predictable URLs
   for i in range(pages):
 
@@ -64,8 +66,6 @@ def scrape(pages):
     # Parse the HTML of the page we've downloaded
     soup = BeautifulSoup(r.data, features="html.parser")
 
-    print(f"Loaded page {i}")
-
     # The table tagged "itemlist" contains the data we want
     item_list_table = soup.find("table", attrs={"class":"itemlist"})
 
@@ -75,7 +75,6 @@ def scrape(pages):
 
     # Each item is split across two table rows, the even indexed rows contain the title and the odd indexed rows contain the comments, score, and age.
     item_list_items = item_list_table.find_all("tr")
-    print(f"Len: {len(item_list_items)}")
 
     for i in range(0, len(item_list_items) - 2, 3):
       first = item_list_items[i]
