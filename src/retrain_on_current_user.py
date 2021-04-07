@@ -24,8 +24,8 @@ def make_training(data_frame):
   train_inputs = []
   train_outputs = []
 
-  for url in data_frame:
-    prepared = prepare_input(url, data_frame[url])
+  for row in data_frame.iterrows():
+    prepared = prepare_input(row[1])
 
     if prepared == None:
       continue
@@ -69,7 +69,7 @@ if __name__ == "__main__":
   classifier_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
   print("Preparing to train")
-  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.3 , epochs=epochs)
+  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.1, epochs=epochs)
 
   print("Printing results")
   loss, accuracy = classifier_model.evaluate(x=training_data[0], y=training_data[1])

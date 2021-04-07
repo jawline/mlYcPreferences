@@ -172,12 +172,13 @@ def build_classifier_model(input_len):
 def load_model(name):
   return tf.keras.models.load_model(name, compile=False)
 
-def prepare_input(url, saved_line):
-  title = saved_line[0]
-  article_score = saved_line[1]
-  article_comments = saved_line[2]
-  article_age = saved_line[3]
-  our_score = saved_line[4]
+def prepare_input(saved_line):
+  url = saved_line[0]
+  title = saved_line[1]
+  article_score = saved_line[2]
+  article_comments = saved_line[3]
+  article_age = saved_line[4]
+  our_score = saved_line[5]
 
   try:
     i = int(title)

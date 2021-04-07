@@ -4,7 +4,7 @@ import urllib3
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
-from model import build_bert_model, load_model, prepare_input, predict
+from model import build_bert_model, load_model, predict
 
 # Reload our current prediction model if it exists, if we haven't trained one yet then do nothing
 our_model = None
@@ -38,6 +38,14 @@ def load_data():
 # Save the current user data
 def save_data(data_frame):
   data_frame.to_csv("user.csv", index=False)
+  print("Saved preferences")
+
+# Find an article in the data frame (TODO: This could be a hash lookup for speed)
+def find_article(data_frame, url):
+  for article in data_frame.iterrows():
+    if article[1][0] == url:
+      return True
+  return False
 
 # Scrape the first {pages} pages from yc and extract the features we want
 def scrape(pages):
@@ -125,13 +133,13 @@ def get_interest():
       continue
 
 # This method does a prediction using the current
-def do_prediction(url, features):
+def do_prediction(features):
 
   global new_predictions
   global correct_new_predictions
 
   # Run the model on the new article and make a prediction
-  prediction = predict(bert_model, our_model, url, features)
+  prediction = predict(bert_model, our_model, features)
 
   new_predictions += 1
 
@@ -165,19 +173,17 @@ def score_article(data_frame, article):
   comments = article[3]
   age = article[4]
 
-  previous = df.get(url)
-  if not isinstance(previous, pd.Series):
+  if not find_article(data_frame, url):
     print("Title: %s" % title)
     print("Url: %s" % url)
 
     interest = get_interest()
-
-    data_frame[url] = [title, score, comments, age, interest]
+    data_frame.loc[df.shape[0]] = [url, title, score, comments, age, interest, int(time.time())]
 
     if our_model != None:
-      do_prediction(url, [title, score, comments, age, interest])
-
+      do_prediction([url, title, score, comments, age, interest])
   else:
+    print(f"Skipping {title} because you have seen this article before")
     # If we have seen it before then skip
     return
 
