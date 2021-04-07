@@ -153,7 +153,6 @@ def do_prediction(features):
     correct_new_predictions += 1
 
   # Print some statistics about the prediction accuracy over this session
-  print(interest_as_binary, prediction > 0, interest_as_binary == interest_prediction_as_binary)
   print(f"Our prediction for {features['title']}: {prediction > 0} {prediction}")
   print(f"Of the new predictions made this session {correct_new_predictions} of {new_predictions} were correct {(float(correct_new_predictions) / float(new_predictions)) * 100.0}%")
 
@@ -181,7 +180,6 @@ def score_article(data_frame, article):
     if our_model != None:
       do_prediction(data_frame.loc[df.shape[0] - 1])
   else:
-    print(f"Skipping {title} because you have seen this article before")
     # If we have seen it before then skip
     return
 
