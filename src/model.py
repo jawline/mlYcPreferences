@@ -193,9 +193,6 @@ def prepare_input(saved_line):
 
 def predict(bert_model, our_model, saved_line):
   sanitized_input = prepare_input(saved_line)[0]
-  print(sanitized_input)
   bert_encoding = bert_model.predict([sanitized_input])
-  print(len(bert_encoding))
-  print(len(bert_encoding[0]))
   prediction = our_model.predict([bert_encoding])[0]
   return prediction

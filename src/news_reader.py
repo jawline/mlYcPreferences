@@ -38,7 +38,6 @@ def load_data():
 # Save the current user data
 def save_data(data_frame):
   data_frame.to_csv("user.csv", index=False)
-  print("Saved preferences")
 
 # Find an article in the data frame (TODO: This could be a hash lookup for speed)
 def find_article(data_frame, url):
@@ -145,7 +144,7 @@ def do_prediction(features):
 
   # Interpret the prediction as a binary (true / false) and interpret the score we
   # just entered as a binary (> 1 in 0-3) then compare the results.
-  interest_as_binary = features[-1] > 1
+  interest_as_binary = features["user_interest"] > 1
   interest_prediction_as_binary = prediction > 0
 
   # If our prediction as a binary (> 0 predicts we like the article) matches the input that we just entered
@@ -165,7 +164,6 @@ def score_article(data_frame, article):
   url = article[0]
 
   if not (url.startswith("https://") or url.startswith("http://")):
-    print("Not a web-link. Skipping article")
     return
 
   title = article[1]
