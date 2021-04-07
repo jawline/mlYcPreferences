@@ -149,7 +149,7 @@ map_model_to_preprocess = {
 tfhub_handle_encoder = map_name_to_handle[bert_model_name]
 tfhub_handle_preprocess = map_model_to_preprocess[bert_model_name]
 
-def build_classifier_model():
+def build_bert_model():
 
   print(f'BERT model selected           : {tfhub_handle_encoder}')
   print(f'Preprocess model auto-selected: {tfhub_handle_preprocess}')
@@ -158,11 +158,16 @@ def build_classifier_model():
   preprocessing_layer = hub.KerasLayer(tfhub_handle_preprocess, name='preprocessing')
   encoder_inputs = preprocessing_layer(text_input)
   encoder = hub.KerasLayer(tfhub_handle_encoder, trainable=False, name='BERT_encoder')
-  outputs = encoder(encoder_inputs)
-  net = outputs['pooled_output']
-  net = tf.keras.layers.Dropout(0.3)(net)
+  outputs = encoder(encoder_inputs)['pooled_output']
+
+  return tf.keras.Model(text_input, outputs)
+
+def build_classifier_model(input_len):
+  inputs = tf.keras.layers.Input(shape=(512,))
+  net = tf.keras.layers.Dropout(0.3)(inputs)
+  net = tf.keras.layers.Dense(128, activation='relu')(net)
   net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
-  return tf.keras.Model(text_input, net)
+  return tf.keras.Model(inputs, net)
 
 def load_model(name):
   return tf.keras.models.load_model(name, compile=False)
@@ -183,4 +188,13 @@ def prepare_input(url, saved_line):
   # Remove the title tags and dates
   title = re.sub(r'\[.+\]', '', title)
   title = re.sub(r'\([0-9]+\)', '', title)
-  return (f"{title} {urlparse(url).netloc} {article_score} {article_comments} {article_age}", our_score)
+  return (f"{title} {urlparse(url).netloc} {article_score} {article_comments} {article_age}", int(our_score) > 1)
+
+def predict(bert_model, our_model, url, saved_line):
+  sanitized_input = prepare_input(url, saved_line)[0]
+  print(sanitized_input)
+  bert_encoding = bert_model.predict([sanitized_input])
+  print(len(bert_encoding))
+  print(len(bert_encoding[0]))
+  prediction = our_model.predict([bert_encoding])[0]
+  return prediction

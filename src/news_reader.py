@@ -4,12 +4,14 @@ import urllib3
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
-from model import load_model, prepare_input
+from model import build_bert_model, load_model, prepare_input, predict
 
 # Reload our current prediction model if it exists, if we haven't trained one yet then do nothing
 our_model = None
+bert_model = build_bert_model()
 new_predictions = 0
 correct_new_predictions = 0
+
 try:
   our_model = load_model("saved_model/current")
 except:
@@ -123,6 +125,32 @@ def get_interest():
       print("Bad input. Try again")
       continue
 
+# This method does a prediction using the current
+def do_prediction(url, features):
+
+  global new_predictions
+  global correct_new_predictions
+
+  # Run the model on the new article and make a prediction
+  prediction = predict(bert_model, our_model, url, features)
+
+  new_predictions += 1
+
+  # Interpret the prediction as a binary (true / false) and interpret the score we
+  # just entered as a binary (> 1 in 0-3) then compare the results.
+  interest_as_binary = features[-1] > 1
+  interest_prediction_as_binary = prediction[0] > 0
+
+  # If our prediction as a binary (> 0 predicts we like the article) matches the input that we just entered
+  # (> 1 = predicted we like the article, <= 1 = predicted we disliked the article) then we mark it as correct
+  if interest_as_binary == interest_prediction_as_binary:
+    correct_new_predictions += 1
+
+  # Print some statistics about the prediction accuracy over this session
+  print(interest_as_binary, prediction[0] > 0, interest_as_binary == interest_prediction_as_binary)
+  print(f"Our prediction for {features[0]}: {prediction[0] > 0} {prediction[0]}")
+  print(f"Of the new predictions made this session {correct_new_predictions} of {new_predictions} were correct {(float(correct_new_predictions) / float(new_predictions)) * 100.0}%")
+
 # This method generates the data from the scrape and then asks a user to score it before finally adding the scored data to the data frame.
 # If there is an existing model it will also print out expected prediction about it.
 def score_article(data_frame, article):
@@ -148,17 +176,7 @@ def score_article(data_frame, article):
     data_frame[url] = [title, score, comments, age, interest]
 
     if our_model != None:
-      global new_predictions
-      global correct_new_predictions
-      prediction = our_model.predict([prepare_input(url, [title, score, comments, age, 0])[0]])
-      new_predictions += 1
-      interest_as_binary = interest > 1
-      interest_prediction_as_binary = prediction[0][0] > 0
-      if interest_as_binary == interest_prediction_as_binary:
-        correct_new_predictions += 1
-      print(interest_as_binary, prediction[0][0] > 0, interest_as_binary == interest_prediction_as_binary)
-      print(f"Our prediction for {title}: {prediction[0][0] > 0} {prediction[0][0]}")
-      print(f"Of the new predictions made this session {correct_new_predictions} of {new_predictions} were correct {(float(correct_new_predictions) / float(new_predictions)) * 100.0}%")
+      do_prediction(url, [title, score, comments, age, interest])
 
   else:
     # If we have seen it before then skip

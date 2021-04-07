@@ -9,7 +9,7 @@ import tensorflow_hub as hub
 import tensorflow_text as text
 import pandas as pd
 from official.nlp import optimization  # to create AdamW optmizer
-from model import build_classifier_model, prepare_input
+from model import build_bert_model, build_classifier_model, prepare_input
 import matplotlib.pyplot as plt
 
 def load_data():
@@ -35,65 +35,19 @@ def make_training(data_frame):
 
   return (np.array(train_inputs), np.array(train_outputs))
 
-def emit_training(training_data):
-  root_train_dir = "./tmp_train/"
-
-  try:
-    shutil.rmtree(root_train_dir)
-    os.makedirs(root_train_dir)
-  except:
-    pass
-
-  train_inputs = training_data[0]
-  train_outputs = training_data[1]
-
-  for i in range(0, len(train_inputs)):
-
-    if int(train_outputs[i]) < 2:
-      train_outputs[i] = "bad"
-    else:
-      train_outputs[i] = "good"
-
-    try:
-      os.makedirs(f"{root_train_dir}/{train_outputs[i]}/")
-    except:
-      pass
-
-    with open(f"{root_train_dir}/{train_outputs[i]}/{i}.txt", "w") as f:
-      f.write(train_inputs[i])
-
 if __name__ == "__main__":
   tf.get_logger().setLevel('DEBUG')
   df = load_data()
   training_data = make_training(df)
-  emit_training(training_data)
 
-  for i in range(0, len(training_data[0])):
-    print(training_data[0][i], training_data[1][i])
+  # Preprocess the inputs with bert and resave our training data and predictions
+  bert_model = build_bert_model()
+  bert_outputs = bert_model.predict(training_data[0])
+  training_data = (bert_outputs, training_data[1])
 
+  print(f"Training data: {len(training_data[0])} split 70/30%")
 
-  # Now we have dumped it all to that directory so we can load is using the keras directory method
-  AUTOTUNE = tf.data.AUTOTUNE
-  batch_size = 32
-  seed = 42
-
-  raw_train_ds = tf.keras.preprocessing.text_dataset_from_directory(
-      './tmp_train/',
-      batch_size=batch_size,
-      validation_split=0.3,
-      subset='training',
-      seed=seed)
-  class_names = raw_train_ds.class_names
-  train_ds = raw_train_ds.cache().prefetch(buffer_size=AUTOTUNE)
-  val_ds = tf.keras.preprocessing.text_dataset_from_directory(
-      './tmp_train/',
-      batch_size=batch_size,
-      validation_split=0.3,
-      subset='validation',
-      seed=seed)
-  val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
-
-  classifier_model = build_classifier_model()
+  classifier_model = build_classifier_model(512)
 
   print("Prepared classifier layer")
 
@@ -102,8 +56,9 @@ if __name__ == "__main__":
 
   print("Selected loss and metrics")
 
-  epochs = 50
-  steps_per_epoch = tf.data.experimental.cardinality(train_ds).numpy()
+  epochs = 10
+  batch_size = 32
+  steps_per_epoch = len(training_data[0]) / batch_size
   num_train_steps = steps_per_epoch * epochs
   num_warmup_steps = int(0.1*num_train_steps)
   init_lr = 3e-2
@@ -114,10 +69,10 @@ if __name__ == "__main__":
   classifier_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
   print("Preparing to train")
-  history = classifier_model.fit(x=train_ds, validation_data=val_ds, epochs=epochs)
+  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.3 , epochs=epochs)
 
   print("Printing results")
-  loss, accuracy = classifier_model.evaluate(val_ds)
+  loss, accuracy = classifier_model.evaluate(x=training_data[0], y=training_data[1])
 
   print(f'Loss: {loss}')
   print(f'Accuracy: {accuracy}')
