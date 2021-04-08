@@ -32,7 +32,7 @@ def load_data():
     df = pd.read_csv("user.csv")
   except Exception as e:
     print("%s - creating fresh" % e)
-    df = pd.DataFrame({})
+    df = pd.DataFrame({"url": [], "title": [], "score": [], "comments": [],"age": [], "user_interest": [], "user_ranking_time": []})
   return df
 
 # Save the current user data

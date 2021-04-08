@@ -7,7 +7,7 @@ import tensorflow_text as text
 import pandas as pd
 from official.nlp import optimization  # to create AdamW optmizer
 
-bert_model_name = 'small_bert/bert_en_uncased_L-4_H-512_A-8' 
+bert_model_name = 'small_bert/bert_en_uncased_L-2_H-512_A-8'
 map_name_to_handle = {
     'bert_en_uncased_L-12_H-768_A-12':
         'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3',
@@ -189,11 +189,14 @@ def prepare_input(saved_line):
   # Remove the title tags and dates
   title = re.sub(r'\[.+\]', '', title)
   title = re.sub(r'\([0-9]+\)', '', title)
-  return (f"{title} {urlparse(url).netloc}", article_score, article_comments, article_age, int(our_score) > 1)
+  return (f"{title} {urlparse(url).netloc}", float(article_score), float(article_comments), float(article_age), int(our_score) > 1)
 
 def predict(bert_model, our_model, saved_line):
-  sanitized_input = prepare_input(saved_line)[0]
-  bert_encoding = bert_model.predict([sanitized_input])
+  prepared_input = prepare_input(saved_line)
+  bert_input = prepared_input[0]
+  bert_encoding = bert_model.predict([bert_input])[0]
+  print("BERT:", bert_encoding)
   coding_with_scores = np.append(bert_encoding, prepared_input[1:-1])
-  prediction = our_model.predict([coding_with_scores])[0]
+  print("CODING:", coding_with_scores, coding_with_scores.shape)
+  prediction = our_model.predict(np.array([coding_with_scores]))[0]
   return prediction
