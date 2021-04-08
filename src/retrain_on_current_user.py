@@ -56,12 +56,12 @@ if __name__ == "__main__":
 
   print("Selected loss and metrics")
 
-  epochs = 20
+  epochs = 100
   batch_size = 8
   steps_per_epoch = len(training_data[0]) / batch_size
   num_train_steps = steps_per_epoch * epochs
   num_warmup_steps = int(0.1*num_train_steps)
-  init_lr = 3e-2
+  init_lr = 3e-3
   optimizer = optimization.create_optimizer(init_lr=init_lr,num_train_steps=num_train_steps,num_warmup_steps=num_warmup_steps, optimizer_type='adamw')
 
   print("Selected optimizer")
