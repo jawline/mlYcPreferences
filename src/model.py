@@ -195,8 +195,6 @@ def predict(bert_model, our_model, saved_line):
   prepared_input = prepare_input(saved_line)
   bert_input = prepared_input[0]
   bert_encoding = bert_model.predict([bert_input])[0]
-  print("BERT:", bert_encoding)
   coding_with_scores = np.append(bert_encoding, prepared_input[1:-1])
-  print("CODING:", coding_with_scores, coding_with_scores.shape)
   prediction = our_model.predict(np.array([coding_with_scores]))[0]
   return prediction
