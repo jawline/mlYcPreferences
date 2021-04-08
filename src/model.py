@@ -163,9 +163,9 @@ def build_bert_model():
   return tf.keras.Model(text_input, outputs)
 
 def build_classifier_model(input_len):
-  inputs = tf.keras.layers.Input(shape=(512,))
+  inputs = tf.keras.layers.Input(shape=(input_len,))
   net = tf.keras.layers.Dropout(0.3)(inputs)
-  net = tf.keras.layers.Dense(128, activation='relu')(net)
+  net = tf.keras.layers.Dense(64, activation='relu')(net)
   net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
   return tf.keras.Model(inputs, net)
 
@@ -189,10 +189,11 @@ def prepare_input(saved_line):
   # Remove the title tags and dates
   title = re.sub(r'\[.+\]', '', title)
   title = re.sub(r'\([0-9]+\)', '', title)
-  return (f"{title} {urlparse(url).netloc} {article_score} {article_comments} {article_age}", int(our_score) > 1)
+  return (f"{title} {urlparse(url).netloc}", article_score, article_comments, article_age, int(our_score) > 1)
 
 def predict(bert_model, our_model, saved_line):
   sanitized_input = prepare_input(saved_line)[0]
   bert_encoding = bert_model.predict([sanitized_input])
-  prediction = our_model.predict([bert_encoding])[0]
+  coding_with_scores = np.append(bert_encoding, prepared_input[1:-1])
+  prediction = our_model.predict([coding_with_scores])[0]
   return prediction

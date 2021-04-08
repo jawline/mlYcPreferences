@@ -20,8 +20,13 @@ def load_data():
     df = pd.DataFrame({})
   return df
 
+# Returns a triple of (bert_inputs, other_inputs, expected_outputs)
+# The bert inputs should first be sent to the BERT classifier to get the BERT encoding
+# The bert encodings should be combined with the other inputs to get the input to the classification model
+# The model should then be trained with the expected outputs given in train_outputs
 def make_training(data_frame):
-  train_inputs = []
+  train_bert_inputs = []
+  train_other_inputs = []
   train_outputs = []
 
   for row in data_frame.iterrows():
@@ -30,10 +35,11 @@ def make_training(data_frame):
     if prepared == None:
       continue
 
-    train_inputs.append(prepared[0])
-    train_outputs.append(prepared[1])
+    train_bert_inputs.append(prepared[0])
+    train_other_inputs.append(prepared[1:-1])
+    train_outputs.append(prepared[-1])
 
-  return (np.array(train_inputs), np.array(train_outputs))
+  return (np.array(train_bert_inputs), np.array(train_other_inputs), np.array(train_outputs))
 
 if __name__ == "__main__":
   tf.get_logger().setLevel('ERROR')
@@ -43,11 +49,13 @@ if __name__ == "__main__":
   # Preprocess the inputs with bert and resave our training data and predictions
   bert_model = build_bert_model()
   bert_outputs = bert_model.predict(training_data[0])
-  training_data = (bert_outputs, training_data[1])
+
+  # Combine the BERT output with the other features (the scores, comments, age, etc)
+  training_data_x = np.array([np.append(bert_outputs[i], training_data[1][i]) for i in range(0, len(bert_outputs))])
+  training_data_y = training_data[2]
 
   print(f"Training data: {len(training_data[0])} split 70/30%")
-
-  classifier_model = build_classifier_model(512)
+  classifier_model = build_classifier_model(512 + 3)
 
   print("Prepared classifier layer")
 
@@ -56,12 +64,12 @@ if __name__ == "__main__":
 
   print("Selected loss and metrics")
 
-  epochs = 100
-  batch_size = 8
+  epochs = 400
+  batch_size = 16
   steps_per_epoch = len(training_data[0]) / batch_size
   num_train_steps = steps_per_epoch * epochs
   num_warmup_steps = int(0.1*num_train_steps)
-  init_lr = 3e-3
+  init_lr = 3e-4
   optimizer = optimization.create_optimizer(init_lr=init_lr,num_train_steps=num_train_steps,num_warmup_steps=num_warmup_steps, optimizer_type='adamw')
 
   print("Selected optimizer")
@@ -69,10 +77,10 @@ if __name__ == "__main__":
   classifier_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
   print("Preparing to train")
-  history = classifier_model.fit(x=training_data[0], y=training_data[1], batch_size=batch_size, validation_split=0.2, epochs=epochs)
+  history = classifier_model.fit(x=training_data_x, y=training_data_y, batch_size=batch_size, validation_split=0.2, epochs=epochs)
 
   print("Printing results")
-  loss, accuracy = classifier_model.evaluate(x=training_data[0], y=training_data[1])
+  loss, accuracy = classifier_model.evaluate(x=training_data_x, y=training_data_y)
 
   print(f'Loss: {loss}')
   print(f'Accuracy: {accuracy}')
