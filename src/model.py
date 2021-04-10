@@ -166,6 +166,7 @@ def build_classifier_model(input_len):
   inputs = tf.keras.layers.Input(shape=(input_len,))
   net = tf.keras.layers.Dropout(0.3)(inputs)
   net = tf.keras.layers.Dense(64, activation='relu')(net)
+  net = tf.keras.layers.Dense(256, activation='relu')(net)
   net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
   return tf.keras.Model(inputs, net)
 
