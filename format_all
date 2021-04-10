@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+echo "Formatting"
+autopep8 --in-place --recursive src/*.py
+echo "Done"

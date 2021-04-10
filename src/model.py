@@ -149,53 +149,61 @@ map_model_to_preprocess = {
 tfhub_handle_encoder = map_name_to_handle[bert_model_name]
 tfhub_handle_preprocess = map_model_to_preprocess[bert_model_name]
 
+
 def build_bert_model():
 
-  print(f'BERT model selected           : {tfhub_handle_encoder}')
-  print(f'Preprocess model auto-selected: {tfhub_handle_preprocess}')
+    print(f'BERT model selected           : {tfhub_handle_encoder}')
+    print(f'Preprocess model auto-selected: {tfhub_handle_preprocess}')
 
-  text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name='text')
-  preprocessing_layer = hub.KerasLayer(tfhub_handle_preprocess, name='preprocessing')
-  encoder_inputs = preprocessing_layer(text_input)
-  encoder = hub.KerasLayer(tfhub_handle_encoder, trainable=False, name='BERT_encoder')
-  outputs = encoder(encoder_inputs)['pooled_output']
+    text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name='text')
+    preprocessing_layer = hub.KerasLayer(
+        tfhub_handle_preprocess, name='preprocessing')
+    encoder_inputs = preprocessing_layer(text_input)
+    encoder = hub.KerasLayer(tfhub_handle_encoder,
+                             trainable=False, name='BERT_encoder')
+    outputs = encoder(encoder_inputs)['pooled_output']
 
-  return tf.keras.Model(text_input, outputs)
+    return tf.keras.Model(text_input, outputs)
+
 
 def build_classifier_model(input_len):
-  inputs = tf.keras.layers.Input(shape=(input_len,))
-  net = tf.keras.layers.Dropout(0.3)(inputs)
-  net = tf.keras.layers.Dense(64, activation='relu')(net)
-  net = tf.keras.layers.Dense(256, activation='relu')(net)
-  net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
-  return tf.keras.Model(inputs, net)
+    inputs = tf.keras.layers.Input(shape=(input_len,))
+    net = tf.keras.layers.Dropout(0.3)(inputs)
+    net = tf.keras.layers.Dense(64, activation='relu')(net)
+    net = tf.keras.layers.Dense(256, activation='relu')(net)
+    net = tf.keras.layers.Dense(1, activation=None, name='classifier')(net)
+    return tf.keras.Model(inputs, net)
+
 
 def load_model(name):
-  return tf.keras.models.load_model(name, compile=False)
+    return tf.keras.models.load_model(name, compile=False)
+
 
 def prepare_input(saved_line):
-  url = saved_line["url"]
-  title = saved_line["title"]
-  article_score = saved_line["score"]
-  article_comments = saved_line["comments"]
-  article_age = saved_line["age"]
-  our_score = saved_line["user_interest"]
+    url = saved_line["url"]
+    title = saved_line["title"]
+    article_score = saved_line["score"]
+    article_comments = saved_line["comments"]
+    article_age = saved_line["age"]
+    our_score = saved_line["user_interest"]
 
-  try:
-    i = int(title)
-    return None
-  except:
-    pass
+    try:
+        i = int(title)
+        return None
+    except:
+        pass
 
-  # Remove the title tags and dates
-  title = re.sub(r'\[.+\]', '', title)
-  title = re.sub(r'\([0-9]+\)', '', title)
-  return (f"{title} {urlparse(url).netloc}", float(article_score), float(article_comments), float(article_age), int(our_score) > 1)
+    # Remove the title tags and dates
+    title = re.sub(r'\[.+\]', '', title)
+    title = re.sub(r'\([0-9]+\)', '', title)
+    return (title, urlparse(url).netloc, float(article_score), float(article_comments), float(article_age), int(our_score) > 1)
+
 
 def predict(bert_model, our_model, saved_line):
-  prepared_input = prepare_input(saved_line)
-  bert_input = prepared_input[0]
-  bert_encoding = bert_model.predict([bert_input])[0]
-  coding_with_scores = np.append(bert_encoding, prepared_input[1:-1])
-  prediction = our_model.predict(np.array([coding_with_scores]))[0]
-  return prediction
+    prepared_input = prepare_input(saved_line)
+    bert_encoding_title = bert_model.predict([prepared_input[0]])[0]
+    bert_encoding_fqdn = bert_model.predict([prepared_input[1]])[0]
+    coding_with_scores = np.concatenate(
+        (bert_encoding_title, bert_encoding_fqdn, np.array(prepared_input[2:-1])))
+    prediction = our_model.predict(np.array([coding_with_scores]))[0]
+    return prediction
